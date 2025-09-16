@@ -1,6 +1,3 @@
-# PROTOCOL = "http://"
-# PROTOCOL = "https://"
-# SERVER_IP = "bplans0.onrender.com"
 with open("data.txt","r") as f:
     m = f.read().split("\n")
     PROTOCOL = m[0]
