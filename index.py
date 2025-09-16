@@ -394,7 +394,7 @@ async def monitor(request):
     vmd = virtual_memory()
     cpu = cpu_percent()
     ram = vmd.percent
-    return response.text(f"CPU : {cpu}%\nRAM : {ram}% , meaning {human_readable_size(vmd.total * ram / 100)} / {human_readable_size(vmd.total)} MB RAM")
+    return response.text(f"CPU : {cpu}%\nRAM : {ram}% , meaning {human_readable_size(vmd.total * ram / 100)} / {human_readable_size(vmd.total)} RAM")
 
 @app.route("/run")  
 async def run(request):
