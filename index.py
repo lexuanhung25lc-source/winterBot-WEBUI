@@ -1,3 +1,8 @@
+# PROTOCOL = "http://"
+# PROTOCOL = "https://"
+# SERVER_IP = "bplans0.onrender.com"
+from os.path import exists
+from psutil import cpu_percent,virtual_memory
 with open("data.txt","r") as f:
     m = f.read().split("\n")
     PROTOCOL = m[0]
@@ -12,6 +17,29 @@ from threading import Thread
 from hashlib import md5
 from time import time as T
 import secrets
+def human_readable_size(size_bytes: float, decimal_places: int = 2) -> str:
+    """
+    Convert a size in bytes into a human-readable string 
+    with the most appropriate unit (KB, MB, GB, TB...).
+
+    Args:
+        size_bytes (float): The size in bytes.
+        decimal_places (int): Number of decimal places for formatting.
+
+    Returns:
+        str: Human-readable size string.
+    """
+    if size_bytes < 0:
+        raise ValueError("Size must be non-negative")
+    if size_bytes == 0:
+        return "0 B"
+
+    units = ["B", "KB", "MB", "GB"]
+    i = 0
+    while size_bytes >= 1024 and i < len(units) - 1:
+        size_bytes /= 1024
+        i += 1
+    return f"{size_bytes:.{decimal_places}f} {units[i]}"
 def multi_thread(func):
     def wrapper(*args, **kwargs):
         thread = Thread(target=func, args=args)
@@ -356,6 +384,18 @@ async def index(request):
         else:
             cx = '\n'.join(listd)
             return response.text(f"Total : {total} ; Succedd : {succedd} ; Failed : {failed}\n--------\n{cx}")
+@app.route("/clear")
+async def clear(request):
+    global listd
+    listd = []
+    return response.text("Cleared")
+@app.route("/monitor")
+async def monitor(request):
+    vmd = virtual_memory()
+    cpu = cpu_percent()
+    ram = vmd.percent
+    return response.text(f"CPU : {cpu}%\nRAM : {ram}% , meaning {human_readable_size(vmd.total * ram / 100)} / {human_readable_size(vmd.total)} MB RAM")
+
 @app.route("/run")  
 async def run(request):
     global getlink
@@ -378,3 +418,16 @@ async def run(request):
 @app.listener("before_server_start")
 async def before_st(app,loop):
     Kaffeine(app)
+    if exists("autorun.txt"):
+        with open("autorun.txt","r") as f:
+            d = f.read().splitlines()
+            url = d[0]
+            max_thread = int(d[1])
+            silent = True if d[2] in ["True","true","1"] else False
+            tms = Thread(target=uview,args=(max_thread,url,silent))
+            tms.start()
+            GLOBAL["link"] = url
+            GLOBAL["silent"] = silent
+        
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8000)
